@@ -3,4 +3,5 @@ scraping/code_forces/data/
 *key.json
 *.zip
 *.csv
+*.pkl
 *.DS_Store

@@ -11,7 +11,6 @@ class BM25_stack_overflow_db:
         self.corpus = []
         self.q2a = {}
 
-        # TODO: remove code blocks from Questions
         # TODO: comment lines not in code blocks in answers
         for i in range(df.shape[0]):
             title = self._clean_html(df.Title.iloc[i])
@@ -32,16 +31,17 @@ class BM25_stack_overflow_db:
     
     def _remove_code_blocks(string):
         for i in range(30):
-            if "<code>" not in string:
+            if "<pre><code>" not in string:
                 break
-            sub = string[string.index("<code>"): string.index("</code>")+7]
+            sub = string[string.index("<pre><code>"): string.index("</code></pre>")+13]
             string = string.replace(string, "")
         return string
             
 
     def _clean_html(html_string):
-        html_string = html.unescape(html_string)
         html_string = re.sub(r'<.+?>', '', html_string) # removes all tags
+        # ^ needs to happen before below because there are no < or > chaaracters in raw html
+        html_string = html.unescape(html_string)
         html_string = html_string.replace('\r', '')
         return html_string.strip()
 
