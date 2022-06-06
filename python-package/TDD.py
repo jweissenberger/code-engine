@@ -2,18 +2,21 @@ import time
 
 class Solution:
 
-    def __init__(self, executable_string: str, test_case_results: dict):
+    def __init__(self, executable_string: str, test_case_results: dict, passed: bool):
         self.executable_string = executable_string
         self.test_case_results = test_case_results
     
     def __call__(self, *args, **kwargs):
         # execute the actual output function with the given arguments
-        return 
+        raise NotImplementedError 
     
     def __str__(self):
         return self.executable_string
     
     def generate_pytest(self):
+        raise NotImplementedError
+    
+    def write_to_file(self):
         raise NotImplementedError
 
     
@@ -49,6 +52,7 @@ class TDD:
         if passed:
             return solution
         else:
+            print("Failed to generate a working solution")
             return results
 
 
@@ -65,6 +69,9 @@ class TDD:
         Given a users prompt and a list of examples, generates a set of prompts for the code model to use
 
         returns a list of prompts
+
+        Enhancements:
+            if the test cases are short enough (less than x characters), then use the examples in some of the prompts
         """
         raise NotImplementedError
     
