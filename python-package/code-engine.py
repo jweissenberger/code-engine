@@ -1,4 +1,5 @@
 import time
+import requests
 
 class Solution:
 
@@ -21,7 +22,7 @@ class Solution:
 
     
 
-class TDD:
+class CodeEngine:
 
     def __init__(self, user_id="", password=""):
 
@@ -61,7 +62,12 @@ class TDD:
         """
         Searches example database for most relevant examples to aid in code generation
         """
-        raise NotImplementedError
+        # currently hit local running bm25 database
+        url = "http://127.0.0.1:8000/get_answers"
+        data = {"query": prompt, "n_answers": num_examples}
+        r = requests.post(url=url, json=data)
+        answers = r.json()["answers"]
+        raise answers
 
 
     def _generate_prompts(self, examples: list, prompt: str) -> list:
@@ -73,6 +79,23 @@ class TDD:
         Enhancements:
             if the test cases are short enough (less than x characters), then use the examples in some of the prompts
         """
+        # check if prompt is inducing the model to generate a function
+        # induce_function = False
+        # phrases = ["generate a function", "create a function", "in a function", "use a function"]
+        # for p in phrases:
+        #     if p in prompt:
+        #         induce_function = True
+        
+        prompt = prompt.replace("\n", "").strip()
+        prompt = f"#The below function does this: {prompt}" # need to figure out what the best thing to do here is
+        # could also ask for a function name and input parameters to the model
+
+        
+
+        prompts = []
+        for ex in examples:
+
+
         raise NotImplementedError
     
     def _generate_and_test_code(self, prompts: list, inputs: list, outputs: list, max_tries: int=200):
