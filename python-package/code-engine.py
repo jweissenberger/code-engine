@@ -1,5 +1,6 @@
 import time
 import requests
+from typing import Union
 
 class Solution:
 
@@ -31,24 +32,29 @@ class CodeEngine:
 
         #TODO: Add warning here that we don't take responsibility for the code that's generated for the service and that it could harm your system if you ask it to write dangerous code
     
-    def generate_code(self, prompt: str, inputs: list, outputs: list, output_type: str="string", generate_testcase=False) -> Solution:
+    def generate_code(
+            self, docstrings: str, inputs:Union[str, list], test_case: Union[dict, list], 
+            func_name: str="solution", output_type: type=None, input_types: Union[type, dict]=None, 
+        ) -> Solution:
         """
         Generates code to solve the prompt
 
         Inputs:
-            prompt: (string) natural language describing the desired code solution
-            inputs: (list) list of inputs for test cases
-            outputs: (list) list of outputs for test cases
-            output_type: (string) string describing the desired output type. Options: "string", "pytest_file"
+            Required:
+                docstrings: (string) description of what you want the code to do
+                func_args: (string or list of strings) strings for the input names of the function
+                test_case: (dict or list of dicts) test cases to verify that the output function is working properly
+            Optional:
+                func_name: (string) name of the output function that's going to solve your problem (this can help the service figure out the code to write)
+                output_type: (type) type of the output of the function (this can help the service figure out the code to write)
+                input_types: (type or dict) types of the input arguments (this can also be inferred from the test cases)
         Ouput:
-            solution: (string) string with the code solution
-
-        Enhancements:
-            might be better to return a solutions object or dictionary that containes results info from the test cases
+            Solution object
         """
-        examples = self._find_examples(prompt)
-        prompts = self._generate_prompts(examples, prompt)
-        passed, solution, results = self._generate_and_test_code(prompts, inputs, outputs)
+        assert type(inputs) is list or type(inputs) is str, "inputs must be a string or a list of strings"
+        examples = self._find_examples(docstrings)
+        prompts = self._generate_prompts(examples, docstrings, inputs, test_case, func_name, output_type, input_types)
+        passed, solution, results = self._generate_and_test_code(prompts, inputs,)
 
         if passed:
             return solution
@@ -70,32 +76,11 @@ class CodeEngine:
         raise answers
 
 
-    def _generate_prompts(self, examples: list, prompt: str) -> list:
-        """
-        Given a users prompt and a list of examples, generates a set of prompts for the code model to use
-
-        returns a list of prompts
-
-        Enhancements:
-            if the test cases are short enough (less than x characters), then use the examples in some of the prompts
-        """
-        # check if prompt is inducing the model to generate a function
-        # induce_function = False
-        # phrases = ["generate a function", "create a function", "in a function", "use a function"]
-        # for p in phrases:
-        #     if p in prompt:
-        #         induce_function = True
-        
-        prompt = prompt.replace("\n", "").strip()
-        prompt = f"#The below function does this: {prompt}" # need to figure out what the best thing to do here is
-        # could also ask for a function name and input parameters to the model
-
-        
-
-        prompts = []
-        for ex in examples:
-
-
+    def _generate_prompts(self, examples, docstrings, inputs, test_case, func_name, output_type, arg_types) -> list:
+        if type(inputs) is str:
+            # if all of the test cases for this argument have the same type 
+            function = f"def {func_name}({inputs})"
+        a = 2
         raise NotImplementedError
     
     def _generate_and_test_code(self, prompts: list, inputs: list, outputs: list, max_tries: int=200):
