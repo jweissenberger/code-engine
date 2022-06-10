@@ -108,28 +108,64 @@ class CodeEngine:
 
     def _generate_prompts(self, examples, docstrings, inputs, test_cases, func_name, output_type, input_types) -> list:
         
+
         if not input_types:
             input_types = self._infer_input_types(inputs, test_cases)
 
-        function = f"def {func_name}({inputs})"
+        if not input_types:
+            function = f"def {func_name}("
+            for inp in inputs:
+                function += f"{inp}, "
+            function = function[:-2] # remove the trailing ,
+            function += ")"
         
-        raise NotImplementedError
+        else:
+            function = f"def {func_name}("
+            for inp in inputs:
+                function += f"{inp}: {input_types[inp].__name__}, "
+            function = function[:-2] # remove the trailing ,
+            function += ")"
+        
+        if output_type:
+            function += f" -> {output_type.__name__}:\n"
+        else:
+            function += ":\n"
+        
+        # add docstrings
+        function += f'\t"""{docstrings}"""\n\t' # this way the model starts generating code without formatting
+
+        prompts = [function] # leave one blank prompt in without examples
+        for ex in examples:
+            prompts.append(f"{ex}\n\n{function}")
+        
+        return prompts
     
     def _infer_input_types(self, inputs, test_cases):
+        """
+        inputs: list of srings defining the inputs
+        test_cases: list of dicts, keys of dicts are the string inputs
+        """
         
         input_types = {}
         for inp in inputs:
-            # make sure the type is the same across all test cases
-            all_same = True
-            if not test_cases.get(inp):
-                return False # this is for the edge case of an option argument, I am getting to far ahead of myself
 
-            for case in test_cases
+            for test in test_cases:
+                # make sure the type is the same across all test cases
+                arg_type = type(test_cases[0][inp])
 
-            # if they're not all the same, return False and don't do type hints
-            if not all_same:
-                return False
+                for case in test_cases:
+                    if not test.get(inp):
+                        return False # this is for the edge case of an option argument, I am getting to far ahead of myself
 
+                    next_arg_type = type(case[inp])
+
+                    # if they're not all the same, return False and don't do type hints
+                    if arg_type != next_arg_type:
+                        return False
+
+            input_types[inp] = arg_type
+        
+        return input_types
 
     
     def _generate_and_test_code(self, prompts: list, inputs: list, outputs: list, max_tries: int=200):

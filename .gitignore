@@ -5,3 +5,4 @@ scraping/code_forces/data/
 *.csv
 *.pkl
 *.DS_Store
+*.pytest_cache
