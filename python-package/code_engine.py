@@ -1,26 +1,7 @@
 import time
 import requests
 from typing import Union
-
-class Solution:
-
-    def __init__(self, executable_string: str, test_case_results: dict, passed: bool):
-        self.executable_string = executable_string
-        self.test_case_results = test_case_results
-    
-    def __call__(self, *args, **kwargs):
-        # execute the actual output function with the given arguments
-        raise NotImplementedError 
-    
-    def __str__(self):
-        return self.executable_string
-    
-    def generate_pytest(self):
-        raise NotImplementedError
-    
-    def write_to_file(self):
-        raise NotImplementedError
-
+import json
     
 
 class CodeEngine:
@@ -29,6 +10,11 @@ class CodeEngine:
 
         self.user_id = user_id
         self.password = password
+
+        f = open('./key.json')
+        key = json.load(f)['key']
+        f.close()
+        self.openai_key = key
 
         #TODO: Add warning here that we don't take responsibility for the code that's generated for the service and that it could harm your system if you ask it to write dangerous code
     
@@ -181,12 +167,36 @@ class CodeEngine:
         for i in range(max_tries):
 
             prompt = prompts[i % len(prompts)]
-            code_output = self._code_model_generation(prompt)
+            code_output = self._single_model_request(prompt)
+            
             all_pass, results, formatted_code = self._check_test_cases(code_output, prompt, inputs, outputs)
             if all_pass:
                 break
         
         return all_pass, formatted_code, results
+    
+    def _single_model_request(self, prompt: str) -> str:
+        header = {
+            'Authorization': f"Bearer {self.openai_key}",
+            'Content-Type': 'application/json'
+        }
+        data = {
+            "prompt": prompt,
+            "temperature": 0.8, 
+            "max_tokens": 300,
+            'stop': ['\n\n\n',  '\nclass', '\ndef', '\n#', '\nif', '\nprint'],
+            #'logit_bias': {"16926": -80, "921": -80}  #lowers probability of #TODO... and # Hint: You... 
+        }
+        r = requests.post(url=f"https://api.openai.com/v1/engines/code-davinci-002/completions", headers=header, json=data)
+        try:
+            out = r.json()['choices'][0]['text']
+        except:
+            print(r)
+            print(r.json())
+            time.sleep(30)
+            r = requests.post(url=f"https://api.openai.com/v1/engines/code-davinci-002/completions", headers=header, json=data)
+            out = r.json()['choices'][0]['text']
+        return out
 
 
     
@@ -230,13 +240,6 @@ class CodeEngine:
         might need to create two outputs here one with the input (to test the test case) and one without the output to return to the start of the function if it passes
         """
         raise NotImplementedError
-        
-    
-    def _code_model_generation(prompt: str()) -> str():
-        # generate code based on prompt
-        raise NotImplementedError
-
-
 
     def _parse_environment(self) -> list():
         """
