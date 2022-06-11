@@ -21,7 +21,8 @@ class CodeEngine:
     def generate_code(
             self, docstrings: str, inputs:Union[str, list], test_cases: Union[dict, list], 
             func_name: str="solution", output_type: type=None, input_types: Union[type, dict]=None, 
-        ) -> Solution:
+        ):
+        # -> Solution:
         """
         Generates code to solve the prompt
 
@@ -154,7 +155,7 @@ class CodeEngine:
         return input_types
 
     
-    def _generate_and_test_code(self, prompts: list, inputs: list, outputs: list, max_tries: int=200):
+    def _generate_and_test_code(self, prompts: list, test_cases, function_name, inputs, max_tries: int=200):
         """
         Takes in a set of prompts and test cases and generates code until a solution passes all of the test cases
 
@@ -168,14 +169,36 @@ class CodeEngine:
 
             prompt = prompts[i % len(prompts)]
             code_output = self._single_model_request(prompt)
-            
-            all_pass, results, formatted_code = self._check_test_cases(code_output, prompt, inputs, outputs)
-            if all_pass:
-                break
+
+            formatted_code = prompt + code_output
+
+            executable_test_cases = self._generate_executable_test_cases(test_cases, inputs, function_name)
+
+        #     all_pass, results, formatted_code = self._check_test_cases(formatted_code, test_cases)
+        #     if all_pass:
+        #         break
         
-        return all_pass, formatted_code, results
+        # return all_pass, formatted_code, results
+
+    def _generate_executable_test_cases(self, test_cases, inputs, function_name):
+        # inputs contains order of the input arguments
+        executable_test_cases = []
+        for case in test_cases:
+            tc = f"assert {function_name}("
+            for inp in inputs:
+                tc += f"{case[inp]}, "
+            tc = tc[:-2] # remove the trailing ,
+            tc += f") == {case['output']}"
+            executable_test_cases.append(tc)
+        
+        return executable_test_cases
+
     
     def _single_model_request(self, prompt: str) -> str:
+        """
+        Enhancement:
+            Make this batch, return 3 solutions
+        """
         header = {
             'Authorization': f"Bearer {self.openai_key}",
             'Content-Type': 'application/json'
@@ -200,46 +223,6 @@ class CodeEngine:
 
 
     
-    def _check_test_cases(code_output, prompt, inputs, outputs):
-
-        # TODO: check if packages called outside of this package can be callable by this code
-
-        # see if any functions from the prompt were called in the code_output
-
-        # parse out the name of the input paramter to the fuction
-        
-        results = []
-        all_pass = True
-        for i in range(len(inputs)):
-            output = ""
-            # put intput into the code
-            input_test_case = f"input = {str(inputs[i])}"
-            formatted_code = ""
-            try:
-                start = time.time()
-                formatted_code = self._format_code(prompt, input_test_case, code_output)
-                exec(formatted_code)
-                finish = time.time()
-            except Exception as e:
-                finish = time.time()
-                all_pass = False
-                results.append({"result": "Failure", "reason": e, "execution_time": finish-start})
-            if output == outputs[i]:
-                results.append({"result": "Pass", "execution_time": finish-start})
-            else:
-                all_pass = False
-                results.append({"result": "Failure", "reason": f"failed test case {i}", "execution_time": finish-start})
-        
-        return all_pass, results, formatted_code
-
-
-    def _format_code() -> str:
-        """
-        Put the prompt, test_case and code_output together
-
-        might need to create two outputs here one with the input (to test the test case) and one without the output to return to the start of the function if it passes
-        """
-        raise NotImplementedError
 
     def _parse_environment(self) -> list():
         """
