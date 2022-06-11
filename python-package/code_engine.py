@@ -2,6 +2,7 @@ import time
 import requests
 from typing import Union
 import json
+from execution import check_correctness
     
 
 class CodeEngine:
@@ -69,16 +70,18 @@ class CodeEngine:
         if type(test_cases) is dict:
             test_cases = [test_cases] # can now assume test_cases will be in a list
 
+        print('Finding Examples')
         examples = self._find_examples(docstrings)
+        print('Generating Prompts')
         prompts = self._generate_prompts(examples, docstrings, inputs, test_cases, func_name, output_type, input_types)
-        passed, solution, results = self._generate_and_test_code(prompts, inputs,)
+        print('Generating Code')
+        result = self._generate_and_test_code(prompts, test_cases, func_name, inputs, max_tries=200, timeout=10.0)
 
-        if passed:
-            return solution
+        if not result:
+            print("Could not generate a result")
+            return None
         else:
-            print("Failed to generate a working solution")
-            return results
-
+            return result
 
 
     def _find_examples(self, docstrings: str, num_examples: int=10) -> list:
@@ -90,7 +93,7 @@ class CodeEngine:
         data = {"query": docstrings, "n_answers": num_examples}
         r = requests.post(url=url, json=data)
         answers = r.json()["answers"]
-        raise answers
+        return answers
 
 
     def _generate_prompts(self, examples, docstrings, inputs, test_cases, func_name, output_type, input_types) -> list:
@@ -155,14 +158,14 @@ class CodeEngine:
         return input_types
 
     
-    def _generate_and_test_code(self, prompts: list, test_cases, function_name, inputs, max_tries: int=200):
+    def _generate_and_test_code(self, prompts: list, test_cases, function_name, inputs, max_tries: int=200, timeout: float=10.0):
         """
         Takes in a set of prompts and test cases and generates code until a solution passes all of the test cases
 
         Enhancements:
             batch requets: send multiple prompt for generation in a single request so that we can test multiple solutions at once
-            timeout: maximum amount of time to let this run, return the code that passes the most test cases at the end
             threads: number of threads to do this in parallel with
+            information on results: if there's lots of timeouts maybe increaes that, or provide the solution that passed the most test cases
         """
 
         for i in range(max_tries):
@@ -174,11 +177,18 @@ class CodeEngine:
 
             executable_test_cases = self._generate_executable_test_cases(test_cases, inputs, function_name)
 
-        #     all_pass, results, formatted_code = self._check_test_cases(formatted_code, test_cases)
-        #     if all_pass:
-        #         break
+            print("Running Test Cases")
+            for tc in executable_test_cases:
+                result = check_correctness(f"{formatted_code}\n{tc}", timeout=timeout)
+                if not result['passed']:
+                    break
+            
+            print('All test cases passed!')
+            # if all passed
+            return formatted_code
         
-        # return all_pass, formatted_code, results
+        return False
+
 
     def _generate_executable_test_cases(self, test_cases, inputs, function_name):
         # inputs contains order of the input arguments
@@ -207,8 +217,7 @@ class CodeEngine:
             "prompt": prompt,
             "temperature": 0.8, 
             "max_tokens": 300,
-            'stop': ['\n\n\n',  '\nclass', '\ndef', '\n#', '\nif', '\nprint'],
-            #'logit_bias': {"16926": -80, "921": -80}  #lowers probability of #TODO... and # Hint: You... 
+            'stop': ['\n\n\n',  '\nclass', '\ndef', '\n#']
         }
         r = requests.post(url=f"https://api.openai.com/v1/engines/code-davinci-002/completions", headers=header, json=data)
         try:
