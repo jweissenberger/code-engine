@@ -134,24 +134,25 @@ class CodeEngine:
         """
         inputs: list of srings defining the inputs
         test_cases: list of dicts, keys of dicts are the string inputs
+
+        enhancements: 
+            infer output type
         """
         
         input_types = {}
         for inp in inputs:
-
+            
+            arg_type = type(test_cases[0][inp])
             for test in test_cases:
+                if inp not in test.keys():
+                    return False # this is for the edge case of an option argument, or if they forgot to add it
+
                 # make sure the type is the same across all test cases
-                arg_type = type(test_cases[0][inp])
+                next_arg_type = type(test[inp])
 
-                for case in test_cases:
-                    if not test.get(inp):
-                        return False # this is for the edge case of an option argument, I am getting to far ahead of myself
-
-                    next_arg_type = type(case[inp])
-
-                    # if they're not all the same, return False and don't do type hints
-                    if arg_type != next_arg_type:
-                        return False
+                # if they're not all the same, return False and don't do type hints
+                if arg_type != next_arg_type:
+                    return False
 
             input_types[inp] = arg_type
         
@@ -179,13 +180,15 @@ class CodeEngine:
 
             print("Running Test Cases")
             for tc in executable_test_cases:
+                print(f'\n\n{formatted_code}\n\n')
                 result = check_correctness(f"{formatted_code}\n{tc}", timeout=timeout)
                 if not result['passed']:
+                    print(result)
                     break
             
-            print('All test cases passed!')
-            # if all passed
-            return formatted_code
+            if result['passed']:
+                print('All test cases passed!')
+                return formatted_code
         
         return False
 
