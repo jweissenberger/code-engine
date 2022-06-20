@@ -1,26 +1,26 @@
 from code_engine import CodeEngine
 from execution import check_correctness
-from concurrent.futures import ThreadPoolExecutor
 
 
 def test_infer_input_types():
     ce = CodeEngine()
 
     inputs = ["first"]
-    test_case = [{"first": [1,2,3]}]
-    input_types = ce._infer_input_types(inputs, test_case)
-    assert input_types == {"first": list}
+    test_case = [{"first": [1,2,3], "output": [1,2]}]
+    output_type = None
+    types = ce._infer_input_and_output_types(inputs, output_type, test_case)
+    assert types == {"input_types": {"first": list}, "output_type": list}
 
     inputs = ["first", "second"]
-    test_case = [{"first": [1,2,3], "second": 100}]
-    input_types = ce._infer_input_types(inputs, test_case)
-    assert input_types == {"first": list, "second": int}
+    test_case = [{"first": [1,2,3], "second": 100, "output": [1,2]}]
+    types = ce._infer_input_and_output_types(inputs, output_type, test_case)
+    assert types == {"input_types": {"first": list, "second": int}, "output_type": list}
 
     inputs = ["first", "second"]
-    test_case = [{"first": [1,2,3], "second": 100},
-                {"first": ["hello"], "second": 24}]
-    input_types = ce._infer_input_types(inputs, test_case)
-    assert input_types == {"first": list, "second": int}
+    test_case = [{"first": [1,2,3], "second": 100, "output": [1,2]},
+                {"first": ["hello"], "second": 24, "output": [1,2]}]
+    types = ce._infer_input_and_output_types(inputs, output_type, test_case)
+    assert types == {"input_types": {"first": list, "second": int}, "output_type": list}
 
 
 def test_generate_prompts():

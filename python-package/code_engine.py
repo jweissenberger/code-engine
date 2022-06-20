@@ -98,9 +98,11 @@ class CodeEngine:
 
     def _generate_prompts(self, examples, docstrings, inputs, test_cases, func_name, output_type, input_types) -> list:
         
-
+        types = self._infer_input_and_output_types(inputs, output_type, test_cases)
         if not input_types:
-            input_types = self._infer_input_types(inputs, test_cases)
+            input_types = types['input_types']
+        if not output_type:
+            output_type = types['output_type']
 
         if not input_types:
             function = f"def {func_name}("
@@ -157,10 +159,17 @@ class CodeEngine:
             input_types[inp] = arg_type
         
         # infer output_type
-        if output_type is not None:
-            # chec
+        if output_type is None:
+            # check that every type in the test cases is the same
+            o_type = type(test_cases[0]["output"])
+            for test in test_cases:
+                if type(test["output"]) != o_type:
+                    o_type = None
+                    break
+            
+            output_type = o_type
         
-        return input_types
+        return {"input_types": input_types, "output_type": output_type}
 
     
     def _generate_and_test_code(self, prompts: list, test_cases, function_name, inputs, max_tries: int=200, timeout: float=10.0):
