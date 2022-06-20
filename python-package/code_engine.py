@@ -130,7 +130,7 @@ class CodeEngine:
         
         return prompts
     
-    def _infer_input_types(self, inputs, test_cases):
+    def _infer_input_and_output_types(self, inputs, output_type, test_cases):
         """
         inputs: list of srings defining the inputs
         test_cases: list of dicts, keys of dicts are the string inputs
@@ -155,6 +155,10 @@ class CodeEngine:
                     return False
 
             input_types[inp] = arg_type
+        
+        # infer output_type
+        if output_type is not None:
+            # chec
         
         return input_types
 

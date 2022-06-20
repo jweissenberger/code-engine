@@ -1,0 +1,2 @@
+- could use Haystack in memory to automatically parallelize over threads
+(how much would this help though if eventually you want to produtionize)
