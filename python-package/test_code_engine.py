@@ -93,6 +93,5 @@ def test_check_correctness():
     assert result == {'passed': False, 'result': 'failed: '}
 
 
-if __name__ == "__main__":
 
-    test_check_correctness()
+

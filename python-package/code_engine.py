@@ -3,7 +3,7 @@ import requests
 from typing import Union
 import json
 from execution import check_correctness
-    
+
 
 class CodeEngine:
 
@@ -114,12 +114,14 @@ class CodeEngine:
         else:
             function = f"def {func_name}("
             for inp in inputs:
-                function += f"{inp}: {input_types[inp].__name__}, "
+                printable_type_name = input_types[inp].__name__
+                function += f"{inp}: {printable_type_name}, "
             function = function[:-2] # remove the trailing ,
             function += ")"
         
         if output_type:
-            function += f" -> {output_type.__name__}:\n"
+            printable_type_name = output_type.__name__
+            function += f" -> {printable_type_name}:\n"
         else:
             function += ":\n"
         
@@ -131,6 +133,8 @@ class CodeEngine:
             prompts.append(f"{ex}\n\n{function}")
         
         return prompts
+    
+
     
     def _infer_input_and_output_types(self, inputs, output_type, test_cases):
         """
@@ -145,6 +149,8 @@ class CodeEngine:
         for inp in inputs:
             
             arg_type = type(test_cases[0][inp])
+            if '.' in str(arg_type):
+                return False
             for test in test_cases:
                 if inp not in test.keys():
                     return False # this is for the edge case of an option argument, or if they forgot to add it
@@ -162,11 +168,13 @@ class CodeEngine:
         if output_type is None:
             # check that every type in the test cases is the same
             o_type = type(test_cases[0]["output"])
+            if '.' in str(o_type):
+                return False
             for test in test_cases:
                 if type(test["output"]) != o_type:
                     o_type = None
                     break
-            
+
             output_type = o_type
         
         return {"input_types": input_types, "output_type": output_type}
