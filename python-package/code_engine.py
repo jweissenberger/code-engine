@@ -98,14 +98,25 @@ class CodeEngine:
 
     def _generate_prompts(self, examples, docstrings, inputs, test_cases, func_name, output_type, input_types) -> list:
         
+        
         types = self._infer_input_and_output_types(inputs, output_type, test_cases)
-        if not input_types:
+        if not input_types and types != False:
             input_types = types['input_types']
-        if not output_type:
+        if not output_type and types != False:
             output_type = types['output_type']
 
         if not input_types:
+
             function = f"def {func_name}("
+            for case in test_cases:
+                for inp in inputs:
+                    built_in_check = self._check_for_non_builtin_types(type(case[inp]))
+                    if not built_in_check["builtin_type"] and built_in_check["import_statement"] not in function:
+                        function = f"{built_in_check['import_statement']}\n\n{function}"
+                built_in_check = self._check_for_non_builtin_types(type(case["output"]))
+                if not built_in_check["builtin_type"] and built_in_check["import_statement"] not in function:
+                    function = f"{built_in_check['import_statement']}\n\n{function}"
+                    
             for inp in inputs:
                 function += f"{inp}, "
             function = function[:-2] # remove the trailing ,
@@ -114,14 +125,25 @@ class CodeEngine:
         else:
             function = f"def {func_name}("
             for inp in inputs:
-                printable_type_name = input_types[inp].__name__
-                function += f"{inp}: {printable_type_name}, "
+                built_in_check = self._check_for_non_builtin_types(input_types[inp])
+                if built_in_check["builtin_type"]:
+                    function += f"{inp}: {input_types[inp].__name__}, "
+                else:
+                    function += f"{inp}, "
+                    if built_in_check["import_statement"] not in function:
+                        function = f"{built_in_check['import_statement']}\n\n{function}"
+
             function = function[:-2] # remove the trailing ,
             function += ")"
         
         if output_type:
-            printable_type_name = output_type.__name__
-            function += f" -> {printable_type_name}:\n"
+            built_in_check = self._check_for_non_builtin_types(output_type)
+            if built_in_check["builtin_type"]:
+                function += f" -> {output_type.__name__}:\n"
+            else:
+                function += ":\n"
+                if built_in_check["import_statement"] not in function:
+                        function = f"{built_in_check['import_statement']}\n\n{function}"
         else:
             function += ":\n"
         
@@ -134,6 +156,27 @@ class CodeEngine:
         
         return prompts
     
+    
+    def _check_for_non_builtin_types(self, variable_type: type):
+        type_string = str(variable_type)
+        print(type_string)
+        
+        if '.' in type_string:
+            # get the package that it's a part of
+            package_name = type_string.split('.')[0].split("'")[-1]
+
+            if package_name == "pandas":
+                import_statement = "import pandas as pd"
+            elif package_name == "numpy":
+                import_statement = "import numpy as np"
+            else:
+                import_statement = f"import {package_name}"
+            return {"builtin_type": False, "import_statement": import_statement}
+        else:
+            return {"builtin_type": True, "import_statement": None}
+
+        
+
 
     
     def _infer_input_and_output_types(self, inputs, output_type, test_cases):
@@ -150,7 +193,7 @@ class CodeEngine:
             
             arg_type = type(test_cases[0][inp])
             if '.' in str(arg_type):
-                return False
+                return False  # if there is a . in they type name then it is a non-builtin type (like a dataframe) and just don't worry about it
             for test in test_cases:
                 if inp not in test.keys():
                     return False # this is for the edge case of an option argument, or if they forgot to add it

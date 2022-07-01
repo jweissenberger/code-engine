@@ -1,5 +1,6 @@
 from code_engine import CodeEngine
 from execution import check_correctness
+import pandas as pd
 
 
 def test_infer_input_types():
@@ -53,6 +54,19 @@ def test_generate_prompts():
     'b=b**\n\ndef square_that_variable(a: int, b: str) -> int:\n\t"""Square a integer in python"""\n\t']
     assert prompts == result
 
+    examples = ["a = a**2"]
+    docstrings = "Square a integer in python"
+    inputs = ["a", "b"]
+    test_cases = [{"a": 2, "b": pd.DataFrame({'name': ['jack', 'jack', 'will'], 'age': [24, 24, 25]}), "output": 4}]
+    func_name = "square_that_variable"
+    output_type = int
+    input_types = None
+
+    prompts = ce._generate_prompts(examples, docstrings, inputs, test_cases, func_name, output_type, input_types)
+    result = ['import pandas as pd\n\ndef square_that_variable(a, b) -> int:\n\t"""Square a integer in python"""\n\t', 
+    'a = a**2\n\nimport pandas as pd\n\ndef square_that_variable(a, b) -> int:\n\t"""Square a integer in python"""\n\t']
+    assert prompts == result
+
 
 def test_generate_executable_test_cases():
     ce = CodeEngine()
@@ -94,4 +108,5 @@ def test_check_correctness():
 
 
 
-
+if __name__ == "__main__":
+    test_generate_prompts()
