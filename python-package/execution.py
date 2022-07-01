@@ -11,7 +11,7 @@ import tempfile
 multiprocessing.set_start_method('fork')
 
 
-def check_correctness(code_and_test_case: str, timeout: float) -> Dict:
+def check_correctness(code_and_test_case: str, timeout: float, exec_globals: dict = {}) -> Dict:
     """
     Evaluates the functional correctness of a completion by running the test
     suite provided in the problem. 
@@ -34,7 +34,6 @@ def check_correctness(code_and_test_case: str, timeout: float) -> Dict:
             # Construct the check program and run it.
             check_program = (code_and_test_case)
             try:
-                exec_globals = {}
                 with swallow_io():
                     with time_limit(timeout):
                          exec(check_program, exec_globals)

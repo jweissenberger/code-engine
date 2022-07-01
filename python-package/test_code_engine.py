@@ -75,7 +75,7 @@ def test_generate_executable_test_cases():
     inputs = ['a']
     function_name = "return_number"
 
-    desired_output = ["assert return_number(2) == 2"]
+    desired_output = [{'test_string': 'assert return_number(a) == output', 'exec_globals': {'a': 2, 'output': 2}}]
     result = ce._generate_executable_test_cases(test_cases, inputs, function_name)
     assert result == desired_output
 
@@ -86,7 +86,9 @@ def test_generate_executable_test_cases():
     inputs = ['a', 'b']
     function_name = "add_numbers"
 
-    desired_output = ["assert add_numbers(2, 3) == 5", "assert add_numbers(3, 3) == 6", "assert add_numbers(1, 3) == 4"]
+    desired_output = [{'test_string': 'assert add_numbers(a, b) == output', 'exec_globals': {'a': 2, 'b': 3, 'output': 5}}, 
+    {'test_string': 'assert add_numbers(a, b) == output', 'exec_globals': {'a': 3, 'b': 3, 'output': 6}}, 
+    {'test_string': 'assert add_numbers(a, b) == output', 'exec_globals': {'a': 1, 'b': 3, 'output': 4}}]
     result = ce._generate_executable_test_cases(test_cases, inputs, function_name)
     assert result == desired_output
 
@@ -107,6 +109,3 @@ def test_check_correctness():
     assert result == {'passed': False, 'result': 'failed: '}
 
 
-
-if __name__ == "__main__":
-    test_generate_prompts()
