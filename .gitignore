@@ -6,3 +6,4 @@ scraping/code_forces/data/
 *.pkl
 *.DS_Store
 *.pytest_cache
+codegen/350*
