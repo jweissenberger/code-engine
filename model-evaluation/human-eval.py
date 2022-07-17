@@ -7,6 +7,7 @@ from execution import check_correctness
 from transformers import AutoTokenizer, AutoModelForCausalLM
 import random
 
+
 class CodeOnlyWithinFunction(StoppingCriteria):
     """
     This is the stopping criteria for code generation models such that they only generate code
@@ -61,12 +62,13 @@ def find_examples(docstrings: str, num_examples: int=10) -> list:
     answers = r.json()["answers"]
     return answers
 
-def model_inference(prompt):
-    # TODO: add parameters for temp, topk p etc
+
+def model_inference(prompt, temperature=None, top_k=None, top_p=None):
     input_ids = tokenizer(prompt, return_tensors="pt").input_ids
 
-    generated_ids = model.generate(input_ids, max_length=1024, temperature=0.2, stopping_criteria=[cf], pad_token_id=2)
+    generated_ids = model.generate(input_ids, max_length=1024, temperature=temperature, stopping_criteria=[cf], pad_token_id=2)
     return tokenizer.decode(generated_ids[0], skip_special_tokens=True)
+
 
 def clean_up_model_output(model_output):
     splits = model_output.split('\n')
@@ -77,6 +79,7 @@ def clean_up_model_output(model_output):
             splits = splits[:i+1]
             break
     return '\n'.join(splits)
+
 
 def find_examples(docstrings: str, num_examples: int=10) -> list:
     """
@@ -97,13 +100,15 @@ def extract_docstrings(full_prompt):
 tokenizer = AutoTokenizer.from_pretrained("../codegen/350-mono-tokenizer")
 model = AutoModelForCausalLM.from_pretrained("../codegen/350-mono-model")
 
+
 if __name__ == "__main__":
 
 
     test_name = "Code-gen-350"
-    model_name = "codegen_350M"
+    model_name = "codegen_35M"
     num_tries_per_question = 200
     num_search_documents = 5
+    temperature = 0.2
 
 
     f = open('/Users/jackweissenberger/Documents/human-eval/data/HumanEval.jsonl', 'r')
@@ -130,7 +135,7 @@ if __name__ == "__main__":
 
             example_and_prompt = f"{example}\n\n{q['prompt']}"
 
-            model_output = model_inference(example_and_prompt)
+            model_output = model_inference(example_and_prompt, temperature=temperature)
             model_output = clean_up_model_output(model_output)
 
             output_with_test_case = f"{model_output}\n\n{q['test']}"
