@@ -5,6 +5,7 @@ import pandas as pd
 import  requests
 from execution import check_correctness
 from transformers import AutoTokenizer, AutoModelForCausalLM
+import random
 
 class CodeOnlyWithinFunction(StoppingCriteria):
     """
@@ -12,13 +13,6 @@ class CodeOnlyWithinFunction(StoppingCriteria):
     that starts each line with a tab. This restrics the models from generating code outside
     of a function.
     """
-
-    def __init__(self):
-        # newline: 198
-        # tab: 197
-        # "    ": 50284
-        # 8 spaces: 50280
-        self.ok_tokens = {198, 197, 50284, 50280, 220}
 
     def __call__(self, input_ids: torch.LongTensor, scores: torch.FloatTensor, **kwargs) -> bool:
         """
@@ -84,6 +78,21 @@ def clean_up_model_output(model_output):
             break
     return '\n'.join(splits)
 
+def find_examples(docstrings: str, num_examples: int=10) -> list:
+    """
+    Searches example database for most relevant examples to aid in code generation
+    """
+    # currently hit local running bm25 database
+    url = "http://127.0.0.1:8000/get_answers"
+    data = {"query": docstrings, "n_answers": num_examples}
+    r = requests.post(url=url, json=data)
+    answers = r.json()["answers"]
+    return answers
+
+
+def extract_docstrings(full_prompt):
+    return full_prompt.strip().split('"""')[-2].strip().split('>>>')[0].strip()
+
 
 tokenizer = AutoTokenizer.from_pretrained("../codegen/350-mono-tokenizer")
 model = AutoModelForCausalLM.from_pretrained("../codegen/350-mono-model")
@@ -92,7 +101,9 @@ if __name__ == "__main__":
 
 
     test_name = "Code-gen-350"
+    model_name = "codegen_350M"
     num_tries_per_question = 200
+    num_search_documents = 5
 
 
     f = open('/Users/jackweissenberger/Documents/human-eval/data/HumanEval.jsonl', 'r')
@@ -107,9 +118,19 @@ if __name__ == "__main__":
 
         q = json.loads(file[i])
 
+        # get docstrings
+        docstrigns = extract_docstrings(q['prompt'])
+
+        # search for examples
+        examples = find_examples(docstrigns, num_examples=num_search_documents)
+
         for k in num_tries_per_question:
 
-            model_output = model_inference(q["prompt"])
+            example = random.choice(examples)
+
+            example_and_prompt = f"{example}\n\n{q['prompt']}"
+
+            model_output = model_inference(example_and_prompt)
             model_output = clean_up_model_output(model_output)
 
             output_with_test_case = f"{model_output}\n\n{q['test']}"
@@ -120,8 +141,13 @@ if __name__ == "__main__":
             row = {
                 "question": i,
                 "attempt": k,
-                "passed": result['passed']
+                "passed": result['passed'],
+                "result": result['result'],
+                "test_name": test_name,
+                "model_name": model_name
             }
             results.append(row)
 
             pd.DataFrame(results).to_csv(f'{test_name}.csv', index=False)
+    
+    #TODO: Calculate pass@K value
