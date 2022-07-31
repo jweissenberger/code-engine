@@ -59,8 +59,6 @@ def check_correctness(code_and_test_case: str, timeout: float, exec_globals: dic
     if p.is_alive():
         p.kill()
 
-    #result = unsafe_execute()
-
     if not result:
         result.append("timed out")
 

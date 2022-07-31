@@ -2,7 +2,9 @@ import time
 import requests
 from typing import Union
 import json
+import warnings
 from execution import check_correctness
+from local_model_inference import local_model_inference
 
 
 class CodeEngine:
@@ -237,26 +239,36 @@ class CodeEngine:
             information on results: if there's lots of timeouts maybe increaes that, or provide the solution that passed the most test cases
         """
 
+        attemps = set()
+
         for i in range(max_tries):
 
             prompt = prompts[i % len(prompts)]
-            code_output = self._single_model_request(prompt)
 
-            formatted_code = prompt + code_output
+            #TODO: make this configurable based on where we want to call the model
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                code_output = local_model_inference(prompt)
+
+            if code_output in attemps:
+                print("Same Code output")
+                continue
+            else:
+                attemps.add(code_output)
 
             executable_test_cases = self._generate_executable_test_cases(test_cases, inputs, function_name)
 
             print("Running Test Cases")
             for tc in executable_test_cases:
-                print(f'\n\n{formatted_code}\n\n')
-                result = check_correctness(f"{formatted_code}\n{tc['test_string']}", timeout=timeout, exec_globals=tc['exec_globals'])
+                print(f'\n\n{code_output}\n\n')
+                result = check_correctness(f"{code_output}\n{tc['test_string']}", timeout=timeout, exec_globals=tc['exec_globals'])
                 if not result['passed']:
                     print(result)
                     break
             
             if result['passed']:
                 print('All test cases passed!')
-                return formatted_code
+                return code_output
         
         return False
 
@@ -287,8 +299,7 @@ class CodeEngine:
         
         return executable_test_cases
 
-    
-    def _single_model_request(self, prompt: str) -> str:
+    def _openai_request(self, prompt: str) -> str:
         """
         Enhancement:
             Make this batch, return 3 solutions
