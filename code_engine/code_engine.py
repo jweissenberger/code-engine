@@ -11,11 +11,10 @@ class CodeEngine:
 
         self.user_id = user_id
         self.password = password
-
-        f = open('./key.json')
-        key = json.load(f)['key']
-        f.close()
-        self.openai_key = key
+        if self.user_id == "":
+            self.environment = "local"
+        else:
+            self.environment = "prod"
 
         #TODO: Add warning here that we don't take responsibility for the code that's generated for the service and that it could harm your system if you ask it to write dangerous code
     
@@ -70,10 +69,15 @@ class CodeEngine:
         if type(test_cases) is dict:
             test_cases = [test_cases] # can now assume test_cases will be in a list
 
-        print('Finding Examples')
-        examples = self._find_examples(docstrings)
-        print('Generating Prompts')
-        prompts = self._generate_prompts(examples, docstrings, inputs, test_cases, func_name, output_type, input_types)
+        if self.environment != "local":
+            print('Finding Examples')
+            examples = self._find_examples(docstrings)
+            print('Generating Prompts')
+            prompts = self._generate_prompts(examples, docstrings, inputs, test_cases, func_name, output_type, input_types)
+        else:
+            examples = None
+            prompts = self._generate_prompts(examples, docstrings, inputs, test_cases, func_name, output_type, input_types)
+
         print('Generating Code')
         result = self._generate_and_test_code(prompts, test_cases, func_name, inputs, max_tries=200, timeout=10.0)
 
@@ -151,8 +155,9 @@ class CodeEngine:
         function += f'\t"""{docstrings}"""\n\t' # this way the model starts generating code without formatting
 
         prompts = [function] # leave one blank prompt in without examples
-        for ex in examples:
-            prompts.append(f"{ex}\n\n{function}")
+        if examples is not None:
+            for ex in examples:
+                prompts.append(f"{ex}\n\n{function}")
         
         return prompts
     

@@ -1,0 +1,7 @@
+Backlog for kaggle dataset
+
+- need to make sure that every example is executatble (only add examples that can be executed)
+- modify code blocks to check which lines are executable or not
+    - many have examples that start with >>> or just have the response directly in the code block
+    - these obviously couldn't be executed and shouldn't be added
+- would be much easier to use the other dataset that we know is executable

@@ -105,8 +105,8 @@ if __name__ == "__main__":
 
 
     test_name = "Code-gen-350"
-    model_name = "codegen_35M"
-    num_tries_per_question = 200
+    model_name = "codegen_350M"
+    num_tries_per_question = 10
     num_search_documents = 5
     temperature = 0.2
 
@@ -129,7 +129,7 @@ if __name__ == "__main__":
         # search for examples
         examples = find_examples(docstrigns, num_examples=num_search_documents)
 
-        for k in num_tries_per_question:
+        for k in range(num_tries_per_question):
 
             example = random.choice(examples)
 
@@ -149,7 +149,9 @@ if __name__ == "__main__":
                 "passed": result['passed'],
                 "result": result['result'],
                 "test_name": test_name,
-                "model_name": model_name
+                "model_name": model_name,
+                "pulled_example": example,
+                "generated_code": model_output
             }
             results.append(row)
 
