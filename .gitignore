@@ -10,3 +10,6 @@ codegen/350*
 codegen/tmp*
 *.pt
 *.tar.gz
+*.egg
+*.egg-info
+build

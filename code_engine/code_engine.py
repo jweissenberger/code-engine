@@ -3,8 +3,8 @@ import requests
 from typing import Union
 import json
 import warnings
-from execution import check_correctness
-from local_model_inference import local_model_inference
+from .execution import check_correctness
+from .local_model_inference import local_model_inference
 
 
 class CodeEngine:
