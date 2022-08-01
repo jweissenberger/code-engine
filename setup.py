@@ -12,7 +12,7 @@ setup(
     author='Jack Weissenberger',
     author_email='jack.weissenberger@gmail.com',
     url='https://github.com/jweissenberger/code-engine',
-    packages='code_engine',
+    packages=['code_engine'],
     install_requires=[
         'transformers==4.21.0',
         'torch'
