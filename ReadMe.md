@@ -14,7 +14,7 @@ ce = CodeEngine()
 docstrings = "This function adds two numbers together"
 test_case = {"a": 1, "b": 2, "output": 3}
 
-result = ce.generate_code(docstrings, inputs, test_cases=test_case)
+result = ce.generate_code(docstrings, test_cases=test_case)
 >>> Generating Code
 >>> All test cases passed!
 
@@ -32,9 +32,9 @@ But, if you give these models multiple shots at solving the same problem, they b
 
 The 12 Billion parameter Codex model is only correct 28% of the time on the HumanEval benchmark when you give it 1 shot on each problem, but if you give it 100 attempts, it gets a correct answer for each problem 72% of the time. 
 
-This is the advantage that Code Engine provides. It provides these code models multiple attempts to solve a given problem and then verifies the generated code against a provided test case.
+This is the advantage that Code Engine provides. It provides these code models with multiple attempts to solve a given problem and then verifies the generated code against a provided test case.
 
-This allows the service to be far more accurate than other ML coding tools and creates much more production-ready solutions because the outputs have been verified against a test case.
+This allows Code Engine to be far more capable than other ML coding tools and allows it to create production-ready solutions that have been verified by your test cases.
 
 
 ## Premium Service
