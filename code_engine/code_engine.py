@@ -269,32 +269,26 @@ class CodeEngine:
                 code_output = local_model_inference(prompt)
 
             if code_output in attemps:
-                print("Same Code output")
                 continue
             else:
                 attemps.add(code_output)
 
             executable_test_cases = self._generate_executable_test_cases(test_cases, inputs, function_name)
 
-            print("Running Test Cases")
             for tc in executable_test_cases:
-                print(f'\n\n{code_output}\n\n')
                 result = check_correctness(f"{code_output}\n{tc['test_string']}", timeout=timeout, exec_globals=tc['exec_globals'])
                 if not result['passed']:
-                    print(result)
                     break
             
             if result['passed']:
                 print('All test cases passed!')
+                print(f'\nCode Solution:\n{code_output}\n\n')
                 return code_output
         
         return False
 
 
     def _generate_executable_test_cases(self, test_cases, inputs, function_name):
-        # TODO add numpy and pandas support here
-        # check if the output type of the test case is of type pandas or numpy
-        # if either of those things than use their corresponding functions 
 
         # inputs contains order of the input arguments
         executable_test_cases = []

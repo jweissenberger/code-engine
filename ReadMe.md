@@ -24,6 +24,12 @@ def solution(a: int, b: int):
   return a + b
 ```
 
+## Installation
+
+```bash
+pip install git+https://github.com/jweissenberger/code-engine
+```
+
 ## Abstract
 
 Most code models and ML code completion tools are usually only good for writing boilerplate code and answering simple questions. For anything more complicated, these models are usually only right about 20% of the time (see Codex and Codegen papers). 

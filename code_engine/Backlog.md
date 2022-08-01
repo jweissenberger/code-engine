@@ -7,3 +7,4 @@
 - split code into multiple files
 - could create onnx/quantized/faster version of the models, put them on huggingface and then could dynamically call them from the code
 - make it pip installable from github
+- add a verbose mode to give updates on how many attempts have been tried
