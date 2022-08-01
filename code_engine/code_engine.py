@@ -21,7 +21,7 @@ class CodeEngine:
         #TODO: Add warning here that we don't take responsibility for the code that's generated for the service and that it could harm your system if you ask it to write dangerous code
     
     def generate_code(
-            self, docstrings: str, inputs:Union[str, list], test_cases: Union[dict, list], 
+            self, docstrings: str, test_cases: Union[dict, list], 
             func_name: str="solution", output_type: type=None, input_types: Union[type, dict]=None, 
         ):
         # -> Solution:
@@ -31,7 +31,6 @@ class CodeEngine:
         Inputs:
             Required:
                 docstrings: (string) description of what you want the code to do
-                inputs: (string or list of strings) strings for the input names of the function
                 test_cases: (dict or list of dicts) test cases to verify that the output function is working properly
                     format: 
                         Single input argument, single test case: 
@@ -65,11 +64,11 @@ class CodeEngine:
         Ouput:
             Solution object
         """
-        assert type(inputs) is list or type(inputs) is str, "inputs must be a string or a list of strings"
-        if type(inputs) is str:
-            inputs = [inputs] # can now assume inputs will always be in a list
+    
         if type(test_cases) is dict:
             test_cases = [test_cases] # can now assume test_cases will be in a list
+
+        inputs = self._infer_inputs(test_cases)
 
         if self.environment != "local":
             print('Finding Examples')
@@ -89,6 +88,25 @@ class CodeEngine:
         else:
             return result
 
+
+    def _infer_inputs(self, test_cases) -> list:
+        """
+        Infers the inputs of code baseed on the test cases.
+        Asserts that inputs are the same for each test case
+        Asserts that 'output' is provided for each test case
+        """
+
+        inputs = list(test_cases[0].keys())
+        inputs.remove('output')
+
+        for case in test_cases:
+            assert "output" in case.keys(), "'output' must be provided for each test case"
+            case_inputs = list(case.keys())
+            case_inputs.remove('output')
+
+            assert case_inputs == inputs, "Inputs for each test case must match"
+
+        return inputs
 
     def _find_examples(self, docstrings: str, num_examples: int=10) -> list:
         """

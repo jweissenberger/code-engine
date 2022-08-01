@@ -5,6 +5,5 @@
     - example: .2 is better for k = 1, but .8 is better for k=100
     - so could use .2  for first 5 attemts and then make it larger over time
 - split code into multiple files
-- remove input names as a requirement, could infer them from the input types
-- could create onnx version of the models, put them on huggingface and then could dynamically call them from the code
+- could create onnx/quantized/faster version of the models, put them on huggingface and then could dynamically call them from the code
 - make it pip installable from github
