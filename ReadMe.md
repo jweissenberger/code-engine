@@ -14,14 +14,14 @@ ce = CodeEngine()
 docstrings = "This function adds two numbers together"
 test_case = {"a": 1, "b": 2, "output": 3}
 
-result = ce.generate_code(docstrings, test_cases=test_case)
+result = ce.generate_code(docstrings, test_case)
 >>> Generating Code
 >>> All test cases passed!
 
 print(result)
 def solution(a: int, b: int):
-	"""This function adds two numbers together"""
-	return a + b
+  """This function adds two numbers together"""
+  return a + b
 ```
 
 ## Abstract
